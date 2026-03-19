@@ -6,8 +6,6 @@ from boto3.dynamodb.conditions import Attr, Key
 dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table('TasksTable')
 
-print("CI/CD working")
-
 def lambda_handler(event, context):
     try:
         print("EVENT:", json.dumps(event))
