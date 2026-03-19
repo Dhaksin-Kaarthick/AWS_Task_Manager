@@ -1,7 +1,4 @@
 # 🚀 Serverless Task Manager (AWS)
-
-A fully serverless task management web application built using AWS services with secure authentication and CI/CD pipeline.
-
 ---
 
 ## 📌 Project Overview
