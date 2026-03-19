@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Task Manager</title>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --primary: #6366f1;
+        --bg: #f8fafc;
+        --card: #fff;
+        --danger: #ef4444;
+      }
+
+      body {
+        font-family: "Inter", sans-serif;
+        background: var(--bg);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      /* 🔥 Toast */
+      .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #1e293b;
+        color: white;
+        padding: 12px 18px;
+        border-radius: 8px;
+        opacity: 0;
+        transform: translateY(-20px);
+        transition: all 0.3s ease;
+        z-index: 1000;
+      }
+
+      .toast.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .toast.success {
+        background: #10b981;
+      }
+
+      .toast.error {
+        background: #ef4444;
+      }
+
+      /* 🔄 Spinner */
+      .spinner {
+        border: 3px solid #e5e7eb;
+        border-top: 3px solid #6366f1;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        animation: spin 0.8s linear infinite;
+        display: inline-block;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* ✨ Smooth list animation */
+      li {
+        animation: fadeIn 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .container {
+        background: var(--card);
+        padding: 2rem;
+        width: 400px;
+        border-radius: 12px;
+      }
+
+      h1 {
+        text-align: center;
+        color: var(--primary);
+      }
+
+      .input-group {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      input {
+        flex: 1;
+        padding: 10px;
+      }
+
+      button {
+        cursor: pointer;
+        padding: 10px;
+        border: none;
+        border-radius: 6px;
+      }
+
+      #addBtn {
+        background: var(--primary);
+        color: white;
+      }
+
+      ul {
+        list-style: none;
+        padding: 0;
+      }
+
+      li {
+        display: flex;
+        justify-content: space-between;
+        background: #f1f5f9;
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 6px;
+      }
+
+      .actions button {
+        margin-left: 5px;
+      }
+
+      .edit-btn {
+        background: #10b981;
+        color: white;
+        border-radius: 6px;
+        padding: 6px 10px;
+      }
+
+      .delete-btn {
+        background: #ef4444;
+        color: white;
+        border-radius: 6px;
+        padding: 6px 10px;
+      }
+
+      .edit-btn:hover {
+        background: #059669;
+      }
+
+      .delete-btn:hover {
+        background: #dc2626;
+      }
+
+      .status {
+        text-align: center;
+        margin-top: 10px;
+        font-size: 14px;
+      }
+
+      .btn-logout-integrated {
+        background: linear-gradient(135deg, #7b68ee, #9370db);
+        color: white;
+        padding: 10px 24px;
+        border-radius: 8px;
+        margin-top: 20px;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h1>Task Manager</h1>
+
+      <div class="input-group">
+        <input id="taskInput" placeholder="Enter task" />
+        <button id="addBtn">Add</button>
+      </div>
+
+      <ul id="taskList"></ul>
+      <div id="status" class="status"></div>
+
+      <button class="btn-logout-integrated" id="logoutBtn">Logout</button>
+    </div>
+    <div id="toast" class="toast"></div>
+
+    <script>
+      const API =
+        "https://51ygkad1z0.execute-api.us-west-2.amazonaws.com/dev/tasks";
+
+      const clientId = "5oreqd5k1q47ft6dmb299i888b";
+      const redirectUri = "https://d1o5wmhaozdnjc.cloudfront.net"; // MUST MATCH EXACTLY
+      const cognitoDomain =
+        "https://us-west-29ipenjfte.auth.us-west-2.amazoncognito.com";
+
+      // 🔥 HANDLE LOGIN TOKEN (MUST BE FIRST)
+      (function () {
+        const hash = window.location.hash;
+
+        if (hash && hash.includes("id_token")) {
+          console.log("Saving token...");
+
+          localStorage.setItem("token", hash);
+
+          // clean URL
+          window.location.hash = "";
+
+          // reload app with token stored
+          window.location.reload();
+        }
+      })();
+
+      function getToken() {
+        const stored = localStorage.getItem("token");
+        if (!stored) return null;
+
+        const params = new URLSearchParams(stored.substring(1));
+        return params.get("id_token");
+      }
+
+      function getHeaders() {
+        return {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + getToken(),
+        };
+      }
+
+      function showToast(message, type = "success") {
+        const toast = document.getElementById("toast");
+
+        toast.innerText = message;
+        toast.className = `toast show ${type}`;
+
+        setTimeout(() => {
+          toast.className = "toast";
+        }, 2500);
+      }
+
+      // ✅ AUTH CHECK (MAIN CONTROL)
+      function checkAuth() {
+        const token = getToken();
+
+        if (!token) {
+          const loginUrl =
+            `${cognitoDomain}/login?client_id=${clientId}` +
+            `&response_type=token` +
+            `&scope=openid+email+profile` +
+            `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+            `&response_mode=fragment`;
+
+          window.location.href = loginUrl;
+          return false;
+        }
+
+        return true;
+      }
+
+      // LOAD TASKS
+      async function loadTasks() {
+        const list = document.getElementById("taskList");
+        list.innerHTML = '<span class="spinner"></span>';
+
+        try {
+          const res = await fetch(API, {
+            headers: getHeaders(),
+          });
+
+          const data = await res.json();
+          list.innerHTML = "";
+
+          if (!data.length) {
+            list.innerHTML = "<p>No tasks yet</p>";
+            return;
+          }
+
+          data.forEach((task) => {
+            const li = document.createElement("li");
+
+            li.innerHTML = `
+              <span>${task.task}</span>
+              <div>
+                <button class="edit-btn" onclick="editTask('${task.taskId}', '${task.task}')">Edit</button>
+                <button class="delete-btn" onclick="deleteTask('${task.taskId}')">Delete</button>
+              </div>
+            `;
+
+            list.appendChild(li);
+          });
+        } catch {
+          showToast("Error loading tasks", "red");
+        }
+      }
+
+      async function addTask() {
+        const input = document.getElementById("taskInput");
+        const btn = document.getElementById("addBtn");
+
+        const task = input.value.trim();
+        if (!task) return;
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span>';
+
+        try {
+          await fetch(API, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ task }),
+          });
+
+          input.value = "";
+          showToast("Task added", "success");
+          await loadTasks();
+        } catch {
+          showToast("Error adding task", "error");
+        }
+
+        btn.disabled = false;
+        btn.innerText = "Add";
+      }
+
+      async function deleteTask(id) {
+        if (!confirm("Delete task?")) return;
+
+        try {
+          await fetch(API, {
+            method: "DELETE",
+            headers: getHeaders(),
+            body: JSON.stringify({ taskId: id }),
+          });
+
+          showToast("Task deleted", "error");
+          await loadTasks();
+        } catch {
+          showToast("Error deleting task", "error");
+        }
+      }
+
+      async function editTask(id, oldTask) {
+        const newTask = prompt("Edit task:", oldTask);
+        if (!newTask) return;
+
+        try {
+          await fetch(API, {
+            method: "PUT",
+            headers: getHeaders(),
+            body: JSON.stringify({ taskId: id, task: newTask }),
+          });
+
+          showToast("Task updated", "success");
+          await loadTasks();
+        } catch {
+          showToast("Error updating task", "error");
+        }
+      }
+
+      function logout() {
+        console.log("Logout clicked ✅");
+
+        const clientId = "5oreqd5k1q47ft6dmb299i888b";
+
+        const cognitoDomain =
+          "https://us-west-29ipenjfte.auth.us-west-2.amazoncognito.com";
+
+        const redirectUri = "https://d1o5wmhaozdnjc.cloudfront.net";
+
+        // clear token
+        localStorage.removeItem("token");
+
+        const url =
+          `${cognitoDomain}/logout?client_id=${clientId}` +
+          `&logout_uri=${encodeURIComponent(redirectUri)}`;
+
+        console.log("Logout URL:", url);
+
+        window.location.href = url;
+      }
+
+      // EVENT LISTENERS (BEST PRACTICE)
+      document.getElementById("addBtn").addEventListener("click", addTask);
+      document.getElementById("logoutBtn").addEventListener("click", logout);
+
+      // 🚀 INIT (ONLY ENTRY POINT)
+      (function init() {
+        if (checkAuth()) {
+          loadTasks();
+        }
+      })();
+    </script>
+  </body>
+</html>
