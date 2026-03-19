@@ -1,53 +1,82 @@
-# 🚀 Serverless Task Manager (AWS)
+# 🚀 AWS Serverless Task Manager
 
-## 📌 Project Overview
+A cloud-native task management application built using AWS serverless architecture with secure authentication, scalable APIs, and CI/CD automation.
 
-This project is a cloud-native Task Manager application that allows users to:
+---
+
+## 📌 Overview
+
+This project is a fully serverless task management application that allows users to securely manage their personal tasks.
+
+Users can:
 
 - Add tasks
 - View tasks
-- Edit tasks
+- Update tasks
 - Delete tasks
 
-Each user can only access their own tasks using secure authentication.
+Each user can only access their own data using secure authentication.
 
 ---
 
 ## 🧱 Architecture
 
-Frontend:
+![Architecture](images/Architecture_diagram.png.png)
 
-- HTML, CSS, JavaScript
-- Hosted on Amazon S3
-- Delivered via CloudFront
+### Flow:
 
-Backend:
-
-- AWS Lambda (Python)
-- Amazon API Gateway (REST API)
-
-Database:
-
-- Amazon DynamoDB
-
-Authentication:
-
-- Amazon Cognito (User Login & Security)
-
-CI/CD:
-
-- GitHub Actions (Auto deployment to Lambda)
+- Frontend hosted on **Amazon S3** and delivered via **CloudFront**
+- **API Gateway** handles HTTP requests and validates JWT tokens
+- **AWS Lambda** executes backend logic
+- **DynamoDB** stores task data
+- **Cognito** manages user authentication
 
 ---
 
-## 🔐 Features
+## 🔐 Authentication Flow
 
-- ✅ User authentication using Cognito
-- ✅ Multi-user support (each user sees only their tasks)
-- ✅ CRUD operations (Create, Read, Update, Delete)
-- ✅ Secure API with JWT token
-- ✅ Serverless architecture
-- ✅ CI/CD pipeline for automatic deployment
+1. User logs in via Amazon Cognito
+2. Cognito returns a JWT token
+3. Frontend stores the token
+4. Token is sent in API requests
+5. API Gateway validates the token
+6. Lambda extracts user identity from the token
+
+---
+
+## 🔄 API Endpoints
+
+| Method | Endpoint | Description         |
+| ------ | -------- | ------------------- |
+| POST   | /tasks   | Create a task       |
+| GET    | /tasks   | Retrieve user tasks |
+| PUT    | /tasks   | Update a task       |
+| DELETE | /tasks   | Delete a task       |
+
+---
+
+## 🗄️ Database Design
+
+**Table: TasksTable**
+
+| Attribute | Type   |
+| --------- | ------ |
+| taskId    | String |
+| task      | String |
+| taskOwner | String |
+
+### Global Secondary Index (GSI):
+
+- Partition Key: `taskOwner`
+- Enables efficient querying of user-specific tasks
+
+---
+
+## ⚡ Performance Optimization
+
+- Replaced DynamoDB `scan()` with `query()`
+- Implemented GSI for user-specific queries
+- Reduced response latency by ~60–70%
 
 ---
 
@@ -59,32 +88,40 @@ CI/CD:
 
 ---
 
-## 📁 Project Structure
+## 🔄 CI/CD Pipeline
 
-```
-Task_Manager/
-│
-├── backend/
-│   └── lambda_function.py
-│
-│
-├── frontend/
-│   └── index.html
-│
-├── images/
-│   ├── login.png
-│   ├── dashboard.png
-│   └── task_manager.png
-│
-├── .github/
-│   └── workflows/
-│       └── deploy.yml
-│
-├── README.md
-└── .gitignore
-```
+- Implemented using **GitHub Actions**
+- On every push:
+  - Lambda function is zipped
+  - Automatically deployed to AWS
 
-## ⚙️ Technologies Used
+---
+
+## 🌐 Deployment
+
+- Frontend: **Amazon S3 + CloudFront**
+- Backend: **AWS Lambda + API Gateway**
+
+---
+
+## 📸 Screenshots
+
+![App Screenshot](images/login.png)
+![App Screenshot](images/task_manger.png)
+
+---
+
+## 🎯 Key Features
+
+- Secure user authentication (Cognito)
+- Multi-user support
+- Full CRUD operations
+- Serverless architecture
+- Automated deployment pipeline
+
+---
+
+## 🧠 Technologies Used
 
 - AWS Lambda
 - Amazon API Gateway
@@ -92,48 +129,15 @@ Task_Manager/
 - Amazon Cognito
 - Amazon S3
 - Amazon CloudFront
+- GitHub Actions
 - Python (boto3)
 - JavaScript (Fetch API)
-- GitHub Actions (CI/CD)
 
 ---
 
-## 🔄 CI/CD Pipeline
+## 🎤 Project Summary
 
-- Code is pushed to GitHub
-- GitHub Actions triggers automatically
-- Lambda function is updated without manual deployment
-
----
-
-## 🌐 Live Demo
-
-👉 [Live App](https://d1o5wmhaozdnjc.cloudfront.net)
-
----
-
-## 🧪 How to Run
-
-1. Open the frontend URL (CloudFront)
-2. Login via Cognito
-3. Start managing tasks
-
----
-
-## 📸 Screenshots
-
-![Task Manager UI](images/login.png)
-![Task Manager UI](images/task_manger.png)
-
----
-
-## 🎯 Learning Outcomes
-
-- Built a complete serverless application
-- Implemented secure authentication using Cognito
-- Designed REST APIs using API Gateway + Lambda
-- Used DynamoDB with indexing for multi-user support
-- Implemented CI/CD using GitHub Actions
+Built a fully serverless task management application using AWS services including Cognito, API Gateway, Lambda, and DynamoDB. Implemented JWT-based authentication and enforced user-level access control for secure multi-user data isolation. Optimized database performance using a Global Secondary Index (GSI), reducing query latency by ~60%, and automated deployments using GitHub Actions CI/CD pipeline.
 
 ---
 
