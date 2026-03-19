@@ -21,7 +21,7 @@ Each user can only access their own data using secure authentication.
 
 ## 🧱 Architecture
 
-![Architecture](images/images/Architecture_diagram.png)
+![Architecture](images/Architecture_diagram.png)
 
 ### Flow:
 
