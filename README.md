@@ -1,7 +1,5 @@
 # 🚀 Serverless Task Manager (AWS)
 
----
-
 ## 📌 Project Overview
 
 This project is a cloud-native Task Manager application that allows users to:
