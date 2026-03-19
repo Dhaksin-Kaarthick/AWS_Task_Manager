@@ -112,7 +112,7 @@ Task_Manager/
 
 ## 🌐 Live Demo
 
-👉 👉 [Live App](https://d1o5wmhaozdnjc.cloudfront.net)
+👉 [Live App](https://d1o5wmhaozdnjc.cloudfront.net)
 
 ---
 
